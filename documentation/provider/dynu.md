@@ -1,96 +1,90 @@
-# Dynu DNS Provider
+## Configuration
 
-## Description
+To use this provider, add an entry to `creds.json` with `TYPE` set to `DYNU`
+along with your Dynu API key. You can generate an API key from the
+[Dynu Control Panel](https://www.dynu.com/en-US/ControlPanel) under **API Credentials**.
 
-Manages DNS zones and records via the [Dynu REST API v2](https://www.dynu.com/en-US/Resources/API).
+Example:
 
-## Credentials
-
-| Key       | Description                         |
-|-----------|-------------------------------------|
-| `api_key` | API key from the Dynu control panel |
-
-Generate an API key at **Control Panel → API Credentials**.
-
-Example `creds.json`:
-
+{% code title="creds.json" %}
 ```json
 {
   "dynu": {
     "TYPE": "DYNU",
-    "api_key": "YOUR_API_KEY_HERE"
+    "api_key": "your-dynu-api-key"
   }
 }
 ```
+{% endcode %}
+
+## Metadata
+
+This provider does not recognize any special metadata fields unique to Dynu.
 
 ## Usage
 
-Example `dnsconfig.js`:
+An example configuration:
 
-```js
+{% code title="dnsconfig.js" %}
+```javascript
 var REG_NONE = NewRegistrar("none");
-var DNS_DYNU = NewDnsProvider("dynu");
+var DSP_DYNU = NewDnsProvider("dynu");
 
-D("example.com", REG_NONE, DnsProvider(DNS_DYNU),
-  A("@", "1.2.3.4"),
-  MX("@", 10, "mail.example.com."),
-  TXT("@", "v=spf1 include:example.com ~all"),
-  CNAME("www", "example.com."),
-  END
+D("example.com", REG_NONE, DnsProvider(DSP_DYNU),
+    A("test", "1.2.3.4"),
+    MX("@", 10, "mail.example.com."),
+    TXT("@", "v=spf1 include:example.com ~all"),
 );
 ```
+{% endcode %}
 
-## Supported Record Types
+## Activation
 
-| Type    | Notes                      |
-|---------|----------------------------|
-| A       |                            |
-| AAAA    |                            |
-| CAA     |                            |
-| CNAME   |                            |
-| DNAME   |                            |
-| MX      |                            |
-| NAPTR   |                            |
-| NS      |                            |
-| PTR     |                            |
-| SRV     |                            |
-| SSHFP   |                            |
-| TLSA    |                            |
-| TXT     | SPF records are normalised to TXT |
+1. Log in to the [Dynu Control Panel](https://www.dynu.com/en-US/ControlPanel).
+2. Navigate to **API Credentials**.
+3. Generate a new API key.
+4. Add the key to `creds.json` as shown above.
 
-## Integration Testing
+## Supported record types
 
-Add to `integrationTest/profiles.json`:
+| Type  | Notes |
+| ----- | ----- |
+| A     | |
+| AAAA  | |
+| CAA   | |
+| CNAME | |
+| DNAME | |
+| MX    | Null MX (priority 0, target `.`) is supported at creation; updating an existing record back to null MX uses a delete-and-recreate internally |
+| NAPTR | |
+| NS    | Subdomain delegation only; see Caveats |
+| PTR   | |
+| SRV   | Null target (`.`) is not supported |
+| SSHFP | |
+| TLSA  | |
+| TXT   | Empty TXT records are not supported |
 
-```json
-{
-  "DYNU": {
-    "TYPE": "DYNU",
-    "api_key": "$DYNU_API_KEY",
-    "domain": "$DYNU_DOMAIN"
-  }
-}
-```
+## Caveats
 
-Run tests:
+### Apex NS records
 
-```sh
-cd integrationTest
-export DYNU_API_KEY='YOUR_API_KEY'
-export DYNU_DOMAIN='your-test-domain.com'
-go test -v -args -verbose -profile DYNU
-```
+Dynu manages its own authoritative nameservers (`ns1.dynu.com` through `ns6.dynu.com`) and does not permit creating, modifying, or deleting apex NS records via the API. DNSControl will not attempt to manage them. Subdomain NS delegations are fully supported.
 
-## Registration in `_all/all.go`
+### NS record TTL
 
-Add the following import to `pkg/providers/_all/all.go`:
+Dynu forces all NS records to a TTL of 3600, regardless of the value specified in `dnsconfig.js`. TTL-only changes to NS records are silently ignored to maintain idempotency.
 
-```go
-_ "github.com/DNSControl/dnscontrol/v4/providers/dynu"  // import path of the dynu package itself stays under providers/
-```
+### Wildcard records
 
-## Notes
+Dynu does not support wildcard DNS records (e.g. `*.example.com`) via the API. DNSControl will reject them at audit time.
 
-- SOA records are managed by Dynu internally and are not synced.
-- HTTPS / SVCB record types are not yet implemented; the provider rejects them at audit time.
-- The Dynu API uses base64 encoding for SSHFP fingerprints and TLSA certificate-associated-data; the provider converts to/from the hex encoding that DNSControl uses internally.
+### SOA records
+
+Dynu manages SOA records internally. They are not returned by the API and cannot be modified via DNSControl.
+
+### Empty TXT records
+
+Dynu rejects TXT records with an empty string value. DNSControl will reject them at audit time.
+
+### Null SRV targets
+
+SRV records with a null target (`.`) are rejected by the Dynu API. DNSControl will reject them at audit time.
