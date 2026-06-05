@@ -47,21 +47,36 @@ D("example.com", REG_NONE, DnsProvider(DSP_DYNU),
 
 ## Supported record types
 
-| Type  | Notes |
-| ----- | ----- |
-| A     | |
-| AAAA  | |
-| CAA   | |
-| CNAME | |
-| DNAME | |
-| MX    | Null MX (priority 0, target `.`) is supported at creation; updating an existing record back to null MX uses a delete-and-recreate internally |
-| NAPTR | |
-| NS    | Subdomain delegation only; see Caveats |
-| PTR   | |
-| SRV   | Null target (`.`) is not supported |
-| SSHFP | |
-| TLSA  | |
-| TXT   | Empty TXT records are not supported |
+Dynu supports the following DNS record types. The **Provider** column indicates
+whether the DNSControl Dynu provider currently implements that type.
+
+| Type       | Description                          | Provider  | Notes |
+| ---------- | ------------------------------------ | :-------: | ----- |
+| A          | IPv4 address                         | ✅        | |
+| AAAA       | IPv6 address                         | ✅        | |
+| AFSDB      | AFS Database                         | ✅        | |
+| CAA        | Certification Authority Authorization| ✅        | |
+| CERT       | Certificate                          | ✅        | |
+| CNAME      | Canonical Name                       | ✅        | |
+| DHCID      | DHCP Identifier                      | ✅        | |
+| DNAME      | Delegation Name                      | ✅        | |
+| HINFO      | System Information                   | ✅        | |
+| HTTPS      | HTTPS Service Binding                | ✅        | |
+| KEY        | Public Key                           | ✅        | |
+| LOC        | Location Information                 | ✅        | |
+| MX         | Mail Exchange                        | ✅        | |
+| NAPTR      | Name Authority Pointer               | ✅        | |
+| OPENPGPKEY | OpenPGP Key                          | ✅        | |
+| PTR        | Pointer                              | ✅        | |
+| RP         | Responsible Person                   | ✅        | |
+| SMIMEA     | S/MIME Certificate Association       | ✅        | |
+| SPF        | Sender Policy Framework              | ✅        | Normalised to TXT on read |
+| SRV        | Service                              | ✅        | |
+| SSHFP      | Secure Shell Fingerprint             | ✅        | |
+| SVCB       | Service Binding                      | ✅        | |
+| TLSA       | Transport Level Security             | ✅        | |
+| TXT        | Text                                 | ✅        | Empty TXT not supported |
+| URI        | Uniform Resource Identifier          | ✅        | |
 
 ## Caveats
 
@@ -72,6 +87,10 @@ Dynu manages its own authoritative nameservers (`ns1.dynu.com` through `ns6.dynu
 ### NS record TTL
 
 Dynu forces all NS records to a TTL of 3600, regardless of the value specified in `dnsconfig.js`. TTL-only changes to NS records are silently ignored to maintain idempotency.
+
+### SPF records
+
+Dynu stores SPF records as a distinct record type internally, but the DNSControl provider normalises them to `TXT` on read. Write them as `TXT` records in `dnsconfig.js`.
 
 ### Wildcard records
 
@@ -85,6 +104,6 @@ Dynu manages SOA records internally. They are not returned by the API and cannot
 
 Dynu rejects TXT records with an empty string value. DNSControl will reject them at audit time.
 
-### Null SRV targets
+### Null MX targets
 
-SRV records with a null target (`.`) are rejected by the Dynu API. DNSControl will reject them at audit time.
+MX records with a null target (RFC 7505, priority 0, target `.`) are fully supported including direct updates.
