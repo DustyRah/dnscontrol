@@ -126,7 +126,7 @@ type recordsResponse struct {
 	DNSRecords []dynuRecord `json:"dnsRecords"`
 }
 
-func (d *dynuProvider) do(method, path string, body interface{}) ([]byte, error) {
+func (d *dynuProvider) do(method, path string, body any) ([]byte, error) {
 	var reqBody io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
