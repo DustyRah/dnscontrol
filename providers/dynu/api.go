@@ -30,8 +30,19 @@ type domainsResponse struct {
 	Domains []dynuDomain `json:"domains"`
 }
 
+// svcParam represents one HTTPS/SVCB service-binding parameter in the Dynu API format.
+// The Type field acts as a discriminator; unused fields are omitted via omitempty.
+type svcParam struct {
+	Type      string   `json:"type"`
+	AlpnIds   []string `json:"alpnIds,omitempty"`
+	Port      *int     `json:"port,omitempty"`
+	IPv4Hints []string `json:"ipv4Hints,omitempty"`
+	IPv6Hints []string `json:"ipv6Hints,omitempty"`
+	Keys      []string `json:"keys,omitempty"`
+	ECH       string   `json:"ech,omitempty"`
+}
+
 // dynuRecord maps to the Dynu API dnsRecord JSON object.
-// Only fields used by the supported record types are included.
 type dynuRecord struct {
 	ID         int64  `json:"id,omitempty"`
 	DomainID   int64  `json:"domainId,omitempty"`
@@ -47,13 +58,13 @@ type dynuRecord struct {
 	IPv4Address string `json:"ipv4Address,omitempty"`
 	// AAAA
 	IPv6Address string `json:"ipv6Address,omitempty"`
-	// CNAME / DNAME / MX / NS / PTR / SRV / NAPTR (replacement)
+	// CNAME / DNAME / MX / NS / PTR / SRV / NAPTR (replacement) / AFSDB
 	Host string `json:"host,omitempty"`
-	// MX / SRV / URI / NAPTR (order) / CERT
+	// MX / SRV / URI / NAPTR (order) / CERT (certificateType stored here by Dynu)
 	Priority *int `json:"priority,omitempty"`
-	// SRV / KEY / SSHFP (fingerprint type) / NAPTR (flags via Weight field in DB, but exposed as naptrFlags)
+	// SRV / SSHFP (fingerprint type) / NAPTR / URI
 	Weight *int `json:"weight,omitempty"`
-	// SRV / TLSA (matching type) / KEY
+	// SRV / TLSA (matchingType) / SMIMEA
 	Port *int `json:"port,omitempty"`
 	// CAA / KEY
 	Flags *int `json:"flags,omitempty"`
@@ -62,7 +73,7 @@ type dynuRecord struct {
 	Value string `json:"value,omitempty"`
 	// TXT / SPF
 	TextData string `json:"textData,omitempty"`
-	// SSHFP
+	// SSHFP / CERT / KEY / LOC
 	Algorithm       *int   `json:"algorithm,omitempty"`
 	FingerPrintType *int   `json:"fingerPrintType,omitempty"`
 	FingerPrint     string `json:"fingerPrint,omitempty"`
@@ -78,6 +89,36 @@ type dynuRecord struct {
 	Services    string `json:"services,omitempty"`
 	RegExp      string `json:"regExp,omitempty"`
 	Replacement string `json:"replacement,omitempty"`
+	// HTTPS / SVCB
+	SvcPriority *int       `json:"svcPriority,omitempty"`
+	TargetName  string     `json:"targetName,omitempty"`
+	SvcParams   []svcParam `json:"svcParams,omitempty"`
+	// AFSDB
+	SubType *int `json:"subType,omitempty"`
+	// CERT
+	CertificateType *int   `json:"certificateType,omitempty"`
+	KeyTag          *int   `json:"keyTag,omitempty"`
+	Certificate     string `json:"certificate,omitempty"`
+	// KEY / OPENPGPKEY
+	KeyProtocol *int   `json:"protocol,omitempty"`
+	PublicKey   string `json:"publicKey,omitempty"`
+	// LOC (decimal degrees / metres)
+	Latitude            *float64 `json:"latitude,omitempty"`
+	Longitude           *float64 `json:"longitude,omitempty"`
+	Altitude            *float64 `json:"altitude,omitempty"`
+	Size                *float64 `json:"size,omitempty"`
+	HorizontalPrecision *float64 `json:"horizontalPrecision,omitempty"`
+	VerticalPrecision   *float64 `json:"verticalPrecision,omitempty"`
+	// HINFO
+	CPU             string `json:"cpu,omitempty"`
+	OperatingSystem string `json:"operatingSystem,omitempty"`
+	// RP
+	MailBox       string `json:"mailBox,omitempty"`
+	TxtDomainName string `json:"txtDomainName,omitempty"`
+	// URI
+	TargetURI string `json:"targetUri,omitempty"`
+	// DHCID
+	RecordData string `json:"recordData,omitempty"`
 }
 
 type recordsResponse struct {
