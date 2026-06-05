@@ -189,7 +189,7 @@ func AuditRecords(records []*models.RecordConfig) []error {
 			if rc.Type == "TXT" && rc.GetTargetTXTJoined() == "" {
 				errs = append(errs, fmt.Errorf("Dynu does not support empty TXT records (label: %q)", rc.NameFQDN))
 			}
-if strings.HasPrefix(rc.Name, "*") {
+			if strings.HasPrefix(rc.Name, "*") {
 				errs = append(errs, fmt.Errorf("Dynu does not support wildcard records (label: %q)", rc.NameFQDN))
 			}
 		default:
@@ -553,7 +553,7 @@ func parseSvcParams(s string) []svcParam {
 		return nil
 	}
 	var result []svcParam
-	for _, part := range strings.Fields(s) {
+	for part := range strings.FieldsSeq(s) {
 		kv := strings.SplitN(part, "=", 2)
 		key := strings.ToLower(kv[0])
 		val := ""
